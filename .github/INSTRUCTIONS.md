@@ -26,12 +26,12 @@ A retail store management system with Spring Boot backend and PostgreSQL databas
 - [x] Add password hashing with BCrypt
 - [x] Create user role-based access control (KIEROWNIK, SPRZEDAWCA, MAGAZYNIER)
 
-### Phase 3: Product & Inventory Management
-- [ ] CRUD operations for Categories
-- [ ] CRUD operations for Products
-- [ ] Product inventory tracking (ProductItems)
-- [ ] Product status management (NA_STANIE → SPRZEDANY flow)
-- [ ] Stock availability checks per store
+### Phase 3: Product & Inventory Management ✅
+- [x] CRUD operations for Categories
+- [x] CRUD operations for Products
+- [x] Product inventory tracking (ProductItems)
+- [x] Product status management (NA_STANIE → SPRZEDANY flow)
+- [x] Stock availability checks per store
 
 ### Phase 4: Delivery Management
 - [ ] Create Delivery records
@@ -161,6 +161,37 @@ A retail store management system with Spring Boot backend and PostgreSQL databas
   - Custom exceptions (AuthenticationException, ResourceAlreadyExistsException)
   - Consistent error responses
 - Test data with sample stores, employees, customers, categories, and products
+
+### ✅ Phase 3 - Product & Category Management (2026-01-06)
+- JPA Entities:
+  - `Product` (with category relationship)
+  - `Category` (product categories)
+  - `ProductItem` (individual product instances with status)
+- Repositories:
+  - `ProductRepository` (search, filter by category)
+  - `CategoryRepository` (find by name)
+  - `ProductItemRepository` (availability queries)
+- Services:
+  - `ProductService` (CRUD + search + availability)
+  - `CategoryService` (CRUD with validation)
+- REST Controllers:
+  - Category Management (GET, POST, PUT, DELETE)
+  - Product Management (GET with pagination, POST, PUT, DELETE)
+  - Product Search & Filtering
+  - Product Availability per Store
+- DTOs:
+  - `ProductDTO`, `CreateProductRequest`, `UpdateProductRequest`
+  - `CategoryDTO`, `CreateCategoryRequest`
+  - `ProductAvailabilityDTO`
+- Role-Based Access:
+  - `@PreAuthorize("hasRole('KIEROWNIK')")` on create/update/delete
+  - Public read access for products and categories
+- Features:
+  - Pagination & sorting on product lists
+  - Full-text search by name/description
+  - Filter products by category
+  - Check product availability across stores
+  - Method-level security enabled
 
 ## Business Rules
 
