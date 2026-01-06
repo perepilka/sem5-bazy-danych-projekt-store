@@ -39,12 +39,12 @@ A retail store management system with Spring Boot backend and PostgreSQL databas
 - [x] Generate ProductItems from deliveries
 - [x] Simple delivery acceptance workflow
 
-### Phase 5: Customer Orders (Online/Phone)
-- [ ] Create CustomerOrder with OrderLines
-- [ ] Order status workflow (NOWE → ZAKONCZONE)
-- [ ] Cross-store product availability check
-- [ ] Reserve products for orders
-- [ ] Calculate order totals
+### Phase 5: Customer Orders (Online/Phone) ✅
+- [x] Create CustomerOrder with OrderLines
+- [x] Order status workflow (NOWE → ZAKONCZONE)
+- [x] Cross-store product availability check
+- [x] Reserve products for orders
+- [x] Calculate order totals
 
 ### Phase 6: Transactions & Sales
 - [ ] Create Transaction (PARAGON/FAKTURA)
