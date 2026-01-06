@@ -1,0 +1,1 @@
+# sem5-bazy-danych-projekt-store
