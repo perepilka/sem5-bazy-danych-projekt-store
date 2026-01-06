@@ -18,13 +18,13 @@ A retail store management system with Spring Boot backend and PostgreSQL databas
 - [x] Set up 3-layer architecture (Controller → Service → Repository)
 - [x] Configure Spring Security basics
 
-### Phase 2: Authentication & User Management
-- [ ] Implement domain-based routing (employee.store.com vs store.com)
-- [ ] Create Employee authentication endpoints
-- [ ] Create Customer authentication endpoints
-- [ ] Implement JWT token generation and validation
-- [ ] Add password hashing with BCrypt
-- [ ] Create user role-based access control (KIEROWNIK, SPRZEDAWCA, MAGAZYNIER)
+### Phase 2: Authentication & User Management ✅
+- [x] Implement domain-based routing (employee.store.com vs store.com)
+- [x] Create Employee authentication endpoints
+- [x] Create Customer authentication endpoints
+- [x] Implement JWT token generation and validation
+- [x] Add password hashing with BCrypt
+- [x] Create user role-based access control (KIEROWNIK, SPRZEDAWCA, MAGAZYNIER)
 
 ### Phase 3: Product & Inventory Management
 - [ ] CRUD operations for Categories
@@ -130,6 +130,37 @@ A retail store management system with Spring Boot backend and PostgreSQL databas
 - 3-layer architecture scaffolding
 - Spring Security dependencies configured
 - Project documentation (README, INSTRUCTIONS)
+
+### ✅ Phase 2 - Authentication & User Management (2026-01-06)
+- JPA Entities created:
+  - `Employee` (with UserRole enum)
+  - `Customer` (with auto-registration date)
+  - `Store`
+- Repositories for data access:
+  - `EmployeeRepository` (findByLogin)
+  - `CustomerRepository` (findByEmail)
+  - `StoreRepository`
+- JWT Authentication:
+  - `JwtUtil` for token generation/validation
+  - `JwtAuthenticationFilter` for request filtering
+  - Tokens include userType and role
+- Authentication Services:
+  - `EmployeeAuthService` (login with position verification)
+  - `CustomerAuthService` (register + login)
+- REST Controllers:
+  - `POST /api/auth/employee/login`
+  - `POST /api/auth/customer/register`
+  - `POST /api/auth/customer/login`
+- Security Configuration:
+  - BCrypt password encoding
+  - Stateless session management
+  - JWT-based authentication
+  - Role-based authorization ready
+- Exception Handling:
+  - Global exception handler
+  - Custom exceptions (AuthenticationException, ResourceAlreadyExistsException)
+  - Consistent error responses
+- Test data with sample stores, employees, customers, categories, and products
 
 ## Business Rules
 
