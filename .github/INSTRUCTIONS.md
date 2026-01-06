@@ -33,11 +33,11 @@ A retail store management system with Spring Boot backend and PostgreSQL databas
 - [x] Product status management (NA_STANIE → SPRZEDANY flow)
 - [x] Stock availability checks per store
 
-### Phase 4: Delivery Management
-- [ ] Create Delivery records
-- [ ] Add DeliveryLines (products in delivery)
-- [ ] Generate ProductItems from deliveries
-- [ ] Simple delivery acceptance workflow
+### Phase 4: Delivery Management ✅
+- [x] Create Delivery records
+- [x] Add DeliveryLines (products in delivery)
+- [x] Generate ProductItems from deliveries
+- [x] Simple delivery acceptance workflow
 
 ### Phase 5: Customer Orders (Online/Phone)
 - [ ] Create CustomerOrder with OrderLines
