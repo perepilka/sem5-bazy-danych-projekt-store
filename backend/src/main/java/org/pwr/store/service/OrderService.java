@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -28,6 +29,8 @@ public class OrderService {
     private final ProductItemRepository productItemRepository;
     private final StoreRepository storeRepository;
     private final CustomerRepository customerRepository;
+    private final TransactionRepository transactionRepository;
+    private final TransactionItemRepository transactionItemRepository;
 
     public Page<OrderDTO> getAllOrders(Pageable pageable) {
         return orderRepository.findAll(pageable).map(this::toDTO);
@@ -57,7 +60,30 @@ public class OrderService {
                 .orElseThrow(() -> new ResourceNotFoundException("Customer not found with id: " + customerId));
 
         Store pickupStore = storeRepository.findById(request.getPickupStoreId())
-                .orElseThrow(() -> new ResourceNotFoundException("Store not found with id: " + request.getPickupStoreId()));
+                .orElseThrow(
+                        () -> new ResourceNotFoundException("Store not found with id: " + request.getPickupStoreId()));
+
+        // Validate product availability in pickup store BEFORE creating order
+        if (!Boolean.TRUE.equals(request.getIgnoreAvailability())) {
+            for (CreateOrderRequest.OrderLineRequest lineReq : request.getLines()) {
+                Product product = productRepository.findById(lineReq.getProductId())
+                        .orElseThrow(() -> new ResourceNotFoundException(
+                                "Product not found with id: " + lineReq.getProductId()));
+
+                List<ProductItem> availableItems = productItemRepository.findAvailableItemsInStore(
+                        lineReq.getProductId(),
+                        request.getPickupStoreId(),
+                        ProductStatus.NA_STANIE);
+
+                if (availableItems.size() < lineReq.getQuantity()) {
+                    throw new IllegalStateException(
+                            "Insufficient inventory for product '" + product.getName() +
+                                    "' in selected store. Available: " + availableItems.size() +
+                                    ", Requested: " + lineReq.getQuantity() +
+                                    ". Please select a different store.");
+                }
+            }
+        }
 
         // Create order
         CustomerOrder order = new CustomerOrder();
@@ -72,7 +98,8 @@ public class OrderService {
         BigDecimal total = BigDecimal.ZERO;
         for (CreateOrderRequest.OrderLineRequest lineReq : request.getLines()) {
             Product product = productRepository.findById(lineReq.getProductId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + lineReq.getProductId()));
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "Product not found with id: " + lineReq.getProductId()));
 
             OrderLine line = new OrderLine();
             line.setOrder(order);
@@ -93,12 +120,49 @@ public class OrderService {
     }
 
     @Transactional
-    public OrderDTO updateOrderStatus(Integer id, OrderStatus status) {
+    public OrderDTO updateOrderStatus(Integer id, OrderStatus newStatus) {
+        System.out.println("Updating order " + id + " to status: " + newStatus);
+
         CustomerOrder order = orderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + id));
 
-        order.setStatus(status);
+        OrderStatus oldStatus = order.getStatus();
+        System.out.println("Old status: " + oldStatus + " -> New status: " + newStatus);
+
+        // Handle status transitions
+        if (newStatus == OrderStatus.W_REALIZACJI && oldStatus == OrderStatus.NOWE) {
+            // Reserve items when starting order processing
+            System.out.println("Reserving items for order");
+            reserveItemsForOrder(order);
+        } else if (newStatus == OrderStatus.GOTOWE_DO_ODBIORU) {
+            // Magazynier can prepare order directly from NOWE
+            if (oldStatus == OrderStatus.NOWE) {
+                // Reserve and mark as ready in one step
+                System.out.println("Reserving and marking items as ready (NOWE -> GOTOWE)");
+                reserveItemsForOrder(order);
+                markItemsReadyForPickup(order);
+            } else if (oldStatus == OrderStatus.W_REALIZACJI) {
+                // Mark already reserved items as ready for pickup
+                System.out.println("Marking reserved items as ready (W_REALIZACJI -> GOTOWE)");
+                markItemsReadyForPickup(order);
+            }
+        } else if (newStatus == OrderStatus.ZAKONCZONE) {
+            // Create transaction when order is completed
+            System.out.println("Completing order - old status: " + oldStatus);
+            if (oldStatus == OrderStatus.GOTOWE_DO_ODBIORU) {
+                createTransactionForOrder(order);
+            } else {
+                System.out.println("WARNING: Trying to complete order from status: " + oldStatus);
+            }
+        } else if (newStatus == OrderStatus.ANULOWANE) {
+            // Release reserved items when order is cancelled
+            System.out.println("Releasing reserved items");
+            releaseReservedItems(order);
+        }
+
+        order.setStatus(newStatus);
         order = orderRepository.save(order);
+        System.out.println("Order status updated successfully");
         return toDTO(order);
     }
 
@@ -111,8 +175,106 @@ public class OrderService {
             throw new IllegalStateException("Cannot cancel completed order");
         }
 
+        // Release any reserved items
+        releaseReservedItems(order);
+
         order.setStatus(OrderStatus.ANULOWANE);
         orderRepository.save(order);
+    }
+
+    private void reserveItemsForOrder(CustomerOrder order) {
+        List<OrderLine> lines = orderLineRepository.findByOrderOrderId(order.getOrderId());
+
+        for (OrderLine line : lines) {
+            List<ProductItem> availableItems = productItemRepository.findAvailableItemsInStore(
+                    line.getProduct().getProductId(),
+                    order.getPickupStore().getStoreId(),
+                    ProductStatus.NA_STANIE);
+
+            int quantityNeeded = line.getQuantity();
+            int reserved = 0;
+
+            for (ProductItem item : availableItems) {
+                if (reserved >= quantityNeeded)
+                    break;
+
+                item.setCurrentStatus(ProductStatus.ZAREZERWOWANY);
+                productItemRepository.save(item);
+                reserved++;
+            }
+
+            if (reserved < quantityNeeded) {
+                throw new IllegalStateException(
+                        "Not enough items available for product: " + line.getProduct().getName());
+            }
+        }
+    }
+
+    private void markItemsReadyForPickup(CustomerOrder order) {
+        List<ProductItem> reservedItems = productItemRepository.findReservedItemsForOrder(order.getOrderId());
+
+        for (ProductItem item : reservedItems) {
+            if (item.getCurrentStatus() == ProductStatus.ZAREZERWOWANY) {
+                item.setCurrentStatus(ProductStatus.OCZEKUJE_NA_ODBIOR);
+                productItemRepository.save(item);
+            }
+        }
+    }
+
+    private void createTransactionForOrder(CustomerOrder order) {
+        // Find an employee in the pickup store to assign transaction
+        // In a real system, this would be the employee who processed the pickup
+        // For now, we'll create a transaction without employee assignment
+
+        System.out.println("Creating transaction for order: " + order.getOrderId());
+
+        // Mark items as sold first
+        List<ProductItem> itemsToSell = productItemRepository.findReservedItemsForOrder(order.getOrderId());
+
+        System.out.println("Found " + itemsToSell.size() + " items to sell");
+
+        if (itemsToSell.isEmpty()) {
+            throw new IllegalStateException("No items found to complete order #" + order.getOrderId());
+        }
+
+        Transaction transaction = new Transaction();
+        transaction.setCustomer(order.getCustomer());
+        transaction.setOrder(order);
+        transaction.setDocumentType("SPRZEDAZ");
+        transaction.setTransactionDate(LocalDateTime.now());
+        transaction.setTotalAmount(order.getTotalAmount());
+        transaction.setEmployee(null); // Could be set to the store manager or pickup employee
+
+        transaction = transactionRepository.save(transaction);
+
+        for (ProductItem item : itemsToSell) {
+            System.out.println("Processing item " + item.getItemId() + " with status: " + item.getCurrentStatus());
+            if (item.getCurrentStatus() == ProductStatus.OCZEKUJE_NA_ODBIOR) {
+                // Create transaction item
+                TransactionItem txItem = new TransactionItem();
+                txItem.setTransaction(transaction);
+                txItem.setItem(item);
+                txItem.setPriceSold(item.getProduct().getBasePrice());
+                transactionItemRepository.save(txItem);
+
+                // Mark as sold
+                item.setCurrentStatus(ProductStatus.SPRZEDANY);
+                productItemRepository.save(item);
+                System.out.println("Item " + item.getItemId() + " marked as sold");
+            }
+        }
+    }
+
+    private void releaseReservedItems(CustomerOrder order) {
+        List<ProductItem> reservedItems = productItemRepository.findReservedItemsForOrder(order.getOrderId());
+
+        for (ProductItem item : reservedItems) {
+            if (item.getCurrentStatus() == ProductStatus.ZAREZERWOWANY ||
+                    item.getCurrentStatus() == ProductStatus.OCZEKUJE_NA_ODBIOR) {
+                item.setCurrentStatus(ProductStatus.NA_STANIE);
+                productItemRepository.save(item);
+            }
+        }
     }
 
     public OrderAvailabilityDTO checkOrderAvailability(Integer pickupStoreId, CreateOrderRequest request) {
@@ -124,14 +286,14 @@ public class OrderService {
 
         for (CreateOrderRequest.OrderLineRequest lineReq : request.getLines()) {
             Product product = productRepository.findById(lineReq.getProductId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + lineReq.getProductId()));
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "Product not found with id: " + lineReq.getProductId()));
 
             // Check availability in pickup store
             List<ProductItem> itemsInPickupStore = productItemRepository.findAvailableItemsInStore(
                     product.getProductId(),
                     pickupStoreId,
-                    ProductStatus.NA_STANIE
-            );
+                    ProductStatus.NA_STANIE);
 
             int availableInPickupStore = itemsInPickupStore.size();
             boolean productAvailable = availableInPickupStore >= lineReq.getQuantity();
@@ -139,8 +301,10 @@ public class OrderService {
             // If not enough in pickup store, check other stores
             Map<Integer, OrderAvailabilityDTO.ProductAvailability.StoreStock> alternativeStores = new HashMap<>();
             if (!productAvailable) {
-                List<ProductStatus> availableStatuses = Arrays.asList(ProductStatus.NA_STANIE, ProductStatus.NA_EKSPOZYCJI);
-                List<Object[]> storeStocks = productItemRepository.countAvailableByStore(product.getProductId(), availableStatuses);
+                List<ProductStatus> availableStatuses = Arrays.asList(ProductStatus.NA_STANIE,
+                        ProductStatus.NA_EKSPOZYCJI);
+                List<Object[]> storeStocks = productItemRepository.countAvailableByStore(product.getProductId(),
+                        availableStatuses);
 
                 for (Object[] row : storeStocks) {
                     Integer storeId = (Integer) row[0];
@@ -153,8 +317,7 @@ public class OrderService {
                                     storeId,
                                     store.getAddress(),
                                     store.getCity(),
-                                    count.intValue()
-                            ));
+                                    count.intValue()));
                         }
                     }
                 }
@@ -166,15 +329,14 @@ public class OrderService {
                     lineReq.getQuantity(),
                     availableInPickupStore,
                     alternativeStores,
-                    productAvailable
-            ));
+                    productAvailable));
 
             if (!productAvailable) {
                 allAvailable = false;
             }
         }
 
-        String message = allAvailable 
+        String message = allAvailable
                 ? "All products are available in the selected store"
                 : "Some products are not available in sufficient quantity. Check alternative stores.";
 
@@ -183,6 +345,22 @@ public class OrderService {
 
     private OrderDTO toDTO(CustomerOrder order) {
         List<OrderLine> lines = orderLineRepository.findByOrderOrderId(order.getOrderId());
+        boolean hasShortage = false;
+
+        // Check for shortages if order status is NOWE
+        if (order.getStatus() == OrderStatus.NOWE) {
+            for (OrderLine line : lines) {
+                long availableCount = productItemRepository.countByProductProductIdAndStoreStoreIdAndCurrentStatus(
+                        line.getProduct().getProductId(),
+                        order.getPickupStore().getStoreId(),
+                        ProductStatus.NA_STANIE);
+
+                if (availableCount < line.getQuantity()) {
+                    hasShortage = true;
+                    break;
+                }
+            }
+        }
 
         List<OrderDTO.OrderLineDTO> lineDTOs = lines.stream()
                 .map(line -> {
@@ -193,8 +371,7 @@ public class OrderService {
                             line.getProduct().getName(),
                             line.getQuantity(),
                             line.getPriceAtOrder(),
-                            lineTotal
-                    );
+                            lineTotal);
                 })
                 .collect(Collectors.toList());
 
@@ -208,7 +385,7 @@ public class OrderService {
                 order.getOrderDate(),
                 order.getStatus().name(),
                 order.getTotalAmount(),
-                lineDTOs
-        );
+                hasShortage,
+                lineDTOs);
     }
 }

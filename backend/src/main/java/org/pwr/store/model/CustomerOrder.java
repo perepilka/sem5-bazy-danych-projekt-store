@@ -33,7 +33,7 @@ public class CustomerOrder {
     private LocalDateTime orderDate;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", columnDefinition = "order_status")
+    @Column(name = "status")
     private OrderStatus status = OrderStatus.NOWE;
 
     @Column(name = "total_amount", nullable = false, precision = 10, scale = 2)

@@ -11,10 +11,12 @@ import java.util.List;
 
 @Repository
 public interface DeliveryRepository extends JpaRepository<Delivery, Integer> {
-    
+
     Page<Delivery> findByStatus(String status, Pageable pageable);
-    
+
     List<Delivery> findByDeliveryDateBetween(LocalDate startDate, LocalDate endDate);
-    
+
     Page<Delivery> findBySupplierNameContainingIgnoreCase(String supplierName, Pageable pageable);
+
+    List<Delivery> findByStatusIn(List<String> statuses);
 }

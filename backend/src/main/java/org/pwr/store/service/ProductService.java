@@ -144,7 +144,9 @@ public class ProductService {
             product.getCategory() != null ? product.getCategory().getName() : null,
             product.getName(),
             product.getDescription(),
-            product.getBasePrice()
+            product.getBasePrice(),
+            product.getLowStockThreshold(),
+            product.getMinimumStock()
         );
     }
 }

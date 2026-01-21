@@ -46,23 +46,23 @@ A retail store management system with Spring Boot backend and PostgreSQL databas
 - [x] Reserve products for orders
 - [x] Calculate order totals
 
-### Phase 6: Transactions & Sales
-- [ ] Create Transaction (PARAGON/FAKTURA)
-- [ ] Link specific ProductItems to transactions
-- [ ] Update product status to SPRZEDANY
-- [ ] Link online order pickup to transaction
-- [ ] Calculate transaction totals
+### Phase 6: Transactions & Sales ✅
+- [x] Create Transaction (PARAGON/FAKTURA)
+- [x] Link specific ProductItems to transactions
+- [x] Update product status to SPRZEDANY
+- [x] Link online order pickup to transaction
+- [x] Calculate transaction totals
 
-### Phase 7: Returns Management
-- [ ] Create Return requests
-- [ ] Add ReturnItems with condition checks
-- [ ] Return status workflow
-- [ ] Update ProductItem status after return (NA_STANIE/USZKODZONY)
+### Phase 7: Returns Management ✅
+- [x] Create Return requests
+- [x] Add ReturnItems with condition checks
+- [x] Return status workflow
+- [x] Update ProductItem status after return (NA_STANIE/USZKODZONY)
 
-### Phase 8: Store Management
-- [ ] CRUD operations for Stores
-- [ ] Assign employees to stores
-- [ ] View inventory per store
+### Phase 8: Store Management ✅
+- [x] CRUD operations for Stores
+- [x] Assign employees to stores
+- [x] View inventory per store
 
 ## Technical Guidelines
 
@@ -192,6 +192,82 @@ A retail store management system with Spring Boot backend and PostgreSQL databas
   - Filter products by category
   - Check product availability across stores
   - Method-level security enabled
+
+### ✅ Phase 6 - Transactions & Sales (2026-01-06)
+- JPA Entities:
+  - `Transaction` (PARAGON/FAKTURA with employee, customer, order links)
+  - `TransactionItem` (links to specific ProductItems)
+- Repositories:
+  - `TransactionRepository` (queries by employee, customer, document type)
+  - `TransactionItemRepository`
+- Services:
+  - `TransactionService` (create sales, update product status, link to orders)
+- REST Controllers:
+  - Transaction Management (GET, POST, DELETE)
+  - Filter by employee, customer, document type
+- DTOs:
+  - `TransactionDTO`, `CreateTransactionRequest`
+- Role-Based Access:
+  - `@PreAuthorize("hasAnyRole('KIEROWNIK', 'SPRZEDAWCA')")`
+  - Delete restricted to KIEROWNIK
+- Features:
+  - Automatic ProductItem status update to SPRZEDANY
+  - Link transactions to online order pickups
+  - Mark orders as ZAKONCZONE when completed
+  - Support both walk-in and registered customers
+  - Calculate transaction totals automatically
+  - Track which employee made the sale
+
+### ✅ Phase 7 - Returns Management (2026-01-06)
+- JPA Entities:
+  - `Return` (return request with transaction link, reason, status)
+  - `ReturnItem` (items being returned with condition check)
+- Repositories:
+  - `ReturnRepository` (queries by status, transaction)
+  - `ReturnItemRepository`
+- Services:
+  - `ReturnService` (create returns, validate items, update statuses)
+- REST Controllers:
+  - Return Management (GET, POST, PATCH, DELETE)
+  - Filter by status, transaction
+- DTOs:
+  - `ReturnDTO`, `CreateReturnRequest`, `UpdateReturnStatusRequest`
+- Role-Based Access:
+  - Customers and staff can create returns
+  - `@PreAuthorize("hasAnyRole('KIEROWNIK', 'SPRZEDAWCA')")` for status updates
+- Features:
+  - Validate items belong to transaction
+  - Verify items were sold before return
+  - Return workflow: ROZPATRYWANY → PRZYJETY/ODRZUCONY
+  - Automatic ProductItem status update on acceptance
+  - Condition-based status: damaged → USZKODZONY, good → NA_STANIE
+  - Complete return tracking with reason
+
+### ✅ Phase 8 - Store Management (2026-01-06)
+- Enhanced Repository:
+  - `StoreRepository` (search, city queries, duplicate detection)
+  - `EmployeeRepository` (count by store)
+  - `ProductItemRepository` (count by store)
+- Services:
+  - `StoreService` (CRUD, inventory views, validation)
+- REST Controllers:
+  - Store Management (GET, POST, PUT, DELETE)
+  - Search and filter by city
+  - Inventory per store
+- DTOs:
+  - `StoreDTO`, `CreateStoreRequest`, `UpdateStoreRequest`
+  - `StoreInventoryDTO` (detailed inventory with status breakdown)
+- Role-Based Access:
+  - `@PreAuthorize("hasRole('KIEROWNIK')")` for create/update/delete
+  - All authenticated users can view stores
+  - Staff can view inventory
+- Features:
+  - Duplicate store detection (same address + city)
+  - Search stores by address or city
+  - View inventory breakdown by status per store
+  - Employee and product counts per store
+  - Prevent deletion if store has employees or inventory
+  - Complete multi-store support
 
 ## Business Rules
 

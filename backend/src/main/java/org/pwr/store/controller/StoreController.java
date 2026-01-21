@@ -59,6 +59,19 @@ public class StoreController {
         return ResponseEntity.ok(storeService.getStoreInventory(id));
     }
 
+    @GetMapping("/{id}/low-stock")
+    @PreAuthorize("hasAnyRole('KIEROWNIK', 'MAGAZYNIER')")
+    public ResponseEntity<List<org.pwr.store.dto.store.LowStockItemDTO>> getLowStockItems(@PathVariable Integer id) {
+        return ResponseEntity.ok(storeService.getLowStockItems(id));
+    }
+
+    @PostMapping("/{id}/auto-delivery")
+    @PreAuthorize("hasAnyRole('KIEROWNIK', 'MAGAZYNIER')")
+    public ResponseEntity<org.pwr.store.dto.delivery.DeliveryDTO> createAutoDelivery(@PathVariable Integer id) {
+        org.pwr.store.dto.delivery.DeliveryDTO delivery = storeService.createAutoDeliveryForLowStock(id);
+        return ResponseEntity.status(HttpStatus.CREATED).body(delivery);
+    }
+
     @PostMapping
     @PreAuthorize("hasRole('KIEROWNIK')")
     public ResponseEntity<StoreDTO> createStore(@Valid @RequestBody CreateStoreRequest request) {

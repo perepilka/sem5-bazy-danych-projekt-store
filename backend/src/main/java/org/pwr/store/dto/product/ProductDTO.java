@@ -16,4 +16,6 @@ public class ProductDTO {
     private String name;
     private String description;
     private BigDecimal basePrice;
+    private Integer lowStockThreshold;
+    private Integer minimumStock;
 }

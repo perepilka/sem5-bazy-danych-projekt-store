@@ -32,7 +32,7 @@ public class ProductItem {
     private Store store;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "current_status", columnDefinition = "product_status")
+    @Column(name = "current_status")
     private ProductStatus currentStatus = ProductStatus.NA_STANIE;
 
     @Column(name = "created_at")

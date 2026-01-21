@@ -31,4 +31,10 @@ public class Product {
 
     @Column(name = "base_price", nullable = false, precision = 10, scale = 2)
     private BigDecimal basePrice;
+
+    @Column(name = "low_stock_threshold")
+    private Integer lowStockThreshold = 10;
+
+    @Column(name = "minimum_stock")
+    private Integer minimumStock = 20;
 }

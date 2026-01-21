@@ -16,6 +16,12 @@ public interface ProductItemRepository extends JpaRepository<ProductItem, Intege
     
     List<ProductItem> findByStoreStoreId(Integer storeId);
     
+    @Query("SELECT pi FROM ProductItem pi " +
+           "JOIN FETCH pi.product p " +
+           "JOIN FETCH p.category " +
+           "WHERE pi.store.storeId = :storeId")
+    List<ProductItem> findByStoreStoreIdWithProduct(@Param("storeId") Integer storeId);
+    
     long countByStoreStoreId(Integer storeId);
     
     List<ProductItem> findByProductProductIdAndCurrentStatus(Integer productId, ProductStatus status);
@@ -34,5 +40,19 @@ public interface ProductItemRepository extends JpaRepository<ProductItem, Intege
     List<Object[]> countAvailableByStore(
         @Param("productId") Integer productId,
         @Param("statuses") List<ProductStatus> statuses
+    );
+
+    @Query("SELECT pi FROM ProductItem pi " +
+           "JOIN OrderLine ol ON ol.product.productId = pi.product.productId " +
+           "WHERE ol.order.orderId = :orderId " +
+           "AND pi.store.storeId = (SELECT o.pickupStore.storeId FROM CustomerOrder o WHERE o.orderId = :orderId) " +
+           "AND (pi.currentStatus = 'ZAREZERWOWANY' OR pi.currentStatus = 'OCZEKUJE_NA_ODBIOR') " +
+           "AND pi.itemId NOT IN (SELECT ti.item.itemId FROM TransactionItem ti)")
+    List<ProductItem> findReservedItemsForOrder(@Param("orderId") Integer orderId);
+    
+    long countByProductProductIdAndStoreStoreIdAndCurrentStatus(
+        Integer productId, 
+        Integer storeId, 
+        ProductStatus status
     );
 }

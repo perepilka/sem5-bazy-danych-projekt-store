@@ -29,7 +29,7 @@ public class Employee {
     private String lastName;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "position", nullable = false, columnDefinition = "user_role")
+    @Column(name = "position", nullable = false)
     private UserRole position;
 
     @Column(name = "login", nullable = false, unique = true, length = 50)

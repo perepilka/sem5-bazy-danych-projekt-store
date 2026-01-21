@@ -79,7 +79,9 @@ CREATE TABLE Deliveries (
     delivery_id SERIAL PRIMARY KEY,
     supplier_name VARCHAR(100),
     delivery_date DATE NOT NULL,
-    status VARCHAR(20) DEFAULT 'PRZYJETA'
+    status VARCHAR(20) DEFAULT 'PRZYJETA',
+    store_id INT REFERENCES Stores(store_id),
+    created_at TIMESTAMP DEFAULT NOW()
 );
 
 -- NOWA TABELA: Pozycje Dostawy (Co jest w papierach/fakturze dostawy)

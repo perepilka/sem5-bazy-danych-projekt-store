@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.pwr.store.dto.delivery.CreateDeliveryRequest;
 import org.pwr.store.dto.delivery.DeliveryDTO;
+import org.pwr.store.dto.delivery.RestockSuggestionDTO;
 import org.pwr.store.service.DeliveryService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -27,13 +28,13 @@ public class DeliveryController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) String status) {
-        
+
         Pageable pageable = PageRequest.of(page, size, Sort.by("deliveryDate").descending());
-        
+
         if (status != null && !status.isEmpty()) {
             return ResponseEntity.ok(deliveryService.getDeliveriesByStatus(status, pageable));
         }
-        
+
         return ResponseEntity.ok(deliveryService.getAllDeliveries(pageable));
     }
 
@@ -41,6 +42,12 @@ public class DeliveryController {
     @PreAuthorize("hasAnyRole('KIEROWNIK', 'MAGAZYNIER')")
     public ResponseEntity<DeliveryDTO> getDeliveryById(@PathVariable Integer id) {
         return ResponseEntity.ok(deliveryService.getDeliveryById(id));
+    }
+
+    @GetMapping("/suggestions")
+    @PreAuthorize("hasAnyRole('KIEROWNIK')")
+    public ResponseEntity<java.util.List<RestockSuggestionDTO>> getRestockSuggestions() {
+        return ResponseEntity.ok(deliveryService.getRestockSuggestions());
     }
 
     @PostMapping
@@ -51,7 +58,7 @@ public class DeliveryController {
     }
 
     @PatchMapping("/{id}/status")
-    @PreAuthorize("hasRole('KIEROWNIK')")
+    @PreAuthorize("hasAnyRole('KIEROWNIK', 'MAGAZYNIER')")
     public ResponseEntity<DeliveryDTO> updateDeliveryStatus(
             @PathVariable Integer id,
             @RequestParam String status) {

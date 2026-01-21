@@ -12,4 +12,5 @@ public class AuthResponse {
     private String userType;
     private String username;
     private String role;
+    private Integer storeId;
 }

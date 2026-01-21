@@ -21,8 +21,9 @@ public class OrderDTO {
     private LocalDateTime orderDate;
     private String status;
     private BigDecimal totalAmount;
+    private boolean hasShortage;
     private List<OrderLineDTO> lines;
-    
+
     @Data
     @NoArgsConstructor
     @AllArgsConstructor

@@ -7,6 +7,7 @@ import org.pwr.store.dto.order.OrderAvailabilityDTO;
 import org.pwr.store.dto.order.OrderDTO;
 import org.pwr.store.model.enums.OrderStatus;
 import org.pwr.store.service.OrderService;
+import org.pwr.store.util.JwtUtil;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -23,9 +24,10 @@ import org.springframework.web.bind.annotation.*;
 public class OrderController {
 
     private final OrderService orderService;
+    private final JwtUtil jwtUtil;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('KIEROWNIK', 'SPRZEDAWCA')")
+    @PreAuthorize("hasAnyRole('KIEROWNIK', 'SPRZEDAWCA', 'MAGAZYNIER')")
     public ResponseEntity<Page<OrderDTO>> getAllOrders(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -50,13 +52,13 @@ public class OrderController {
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<Page<OrderDTO>> getMyOrders(
             Authentication authentication,
+            @RequestHeader("Authorization") String authHeader,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
 
-        // In real implementation, extract customer ID from JWT
-        // For now, this is a placeholder
+        Integer customerId = extractCustomerIdFromToken(authHeader);
         Pageable pageable = PageRequest.of(page, size, Sort.by("orderDate").descending());
-        return ResponseEntity.ok(orderService.getAllOrders(pageable));
+        return ResponseEntity.ok(orderService.getOrdersByCustomer(customerId, pageable));
     }
 
     @GetMapping("/{id}")
@@ -69,11 +71,10 @@ public class OrderController {
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<OrderDTO> createOrder(
             Authentication authentication,
+            @RequestHeader("Authorization") String authHeader,
             @Valid @RequestBody CreateOrderRequest request) {
 
-        // In real implementation, extract customer ID from JWT
-        // For now, use a placeholder (customer with ID 1)
-        Integer customerId = 1; // TODO: Extract from JWT token
+        Integer customerId = extractCustomerIdFromToken(authHeader);
         OrderDTO order = orderService.createOrder(customerId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(order);
     }
@@ -86,7 +87,7 @@ public class OrderController {
     }
 
     @PatchMapping("/{id}/status")
-    @PreAuthorize("hasAnyRole('KIEROWNIK', 'SPRZEDAWCA')")
+    @PreAuthorize("hasAnyRole('KIEROWNIK', 'SPRZEDAWCA', 'MAGAZYNIER')")
     public ResponseEntity<OrderDTO> updateOrderStatus(
             @PathVariable Integer id,
             @RequestParam String status) {
@@ -100,5 +101,10 @@ public class OrderController {
     public ResponseEntity<Void> cancelOrder(@PathVariable Integer id) {
         orderService.cancelOrder(id);
         return ResponseEntity.noContent().build();
+    }
+
+    private Integer extractCustomerIdFromToken(String authHeader) {
+        String token = authHeader.substring(7); // Remove "Bearer " prefix
+        return jwtUtil.extractUserId(token);
     }
 }

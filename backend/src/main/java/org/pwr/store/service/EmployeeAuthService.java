@@ -36,11 +36,14 @@ public class EmployeeAuthService {
                 employee.getPosition().name()
         );
 
+        Integer storeId = employee.getStore() != null ? employee.getStore().getStoreId() : null;
+
         return new AuthResponse(
                 token,
                 "EMPLOYEE",
                 employee.getLogin(),
-                employee.getPosition().name()
+                employee.getPosition().name(),
+                storeId
         );
     }
 }

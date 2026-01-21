@@ -36,9 +36,9 @@ public class CustomerAuthService {
 
         customer = customerRepository.save(customer);
 
-        String token = jwtUtil.generateToken(customer.getEmail(), "CUSTOMER", null);
+        String token = jwtUtil.generateTokenWithId(customer.getEmail(), "CUSTOMER", null, customer.getCustomerId());
 
-        return new AuthResponse(token, "CUSTOMER", customer.getEmail(), null);
+        return new AuthResponse(token, "CUSTOMER", customer.getEmail(), null, null);
     }
 
     public AuthResponse login(LoginRequest request) {
@@ -49,8 +49,8 @@ public class CustomerAuthService {
             throw new AuthenticationException("Invalid credentials");
         }
 
-        String token = jwtUtil.generateToken(customer.getEmail(), "CUSTOMER", null);
+        String token = jwtUtil.generateTokenWithId(customer.getEmail(), "CUSTOMER", null, customer.getCustomerId());
 
-        return new AuthResponse(token, "CUSTOMER", customer.getEmail(), null);
+        return new AuthResponse(token, "CUSTOMER", customer.getEmail(), null, null);
     }
 }
