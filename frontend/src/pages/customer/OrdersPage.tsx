@@ -12,7 +12,6 @@ import {
   Alert,
   Divider,
   Grid,
-  IconButton,
   Collapse,
   Button,
   Dialog,
@@ -58,15 +57,15 @@ const OrdersPage = () => {
     const statusMap: Record<string, 'default' | 'warning' | 'info' | 'success' | 'error'> = {
       NOWE: 'warning',
       W_REALIZACJI: 'info',
-      GOTOWE_DO_ODBIORU: 'primary',
+      GOTOWE_DO_ODBIORU: 'info',
       ZAKONCZONE: 'success',
       ANULOWANE: 'error',
     };
     return statusMap[status] || 'default';
   };
 
-  const getStatusIcon = (status: string) => {
-    const iconMap: Record<string, JSX.Element> = {
+  const getStatusIcon = (status: string): React.ReactElement => {
+    const iconMap: Record<string, React.ReactElement> = {
       NOWE: <Pending />,
       W_REALIZACJI: <LocalShipping />,
       GOTOWE_DO_ODBIORU: <Store />,
@@ -115,15 +114,15 @@ const OrdersPage = () => {
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       {successMessage && (
-        <Alert 
-          severity="success" 
+        <Alert
+          severity="success"
           sx={{ mb: 3 }}
           onClose={() => setSuccessMessage(null)}
         >
           {successMessage}
         </Alert>
       )}
-      
+
       <Box display="flex" alignItems="center" gap={2} mb={4}>
         <ShoppingBag fontSize="large" color="primary" />
         <Box>
@@ -152,7 +151,7 @@ const OrdersPage = () => {
             const isExpanded = expandedOrder === order.orderId;
 
             return (
-              <Grid item xs={12} key={order.orderId}>
+              <Grid size={{ xs: 12 }} key={order.orderId}>
                 <Card elevation={2}>
                   <CardContent>
                     <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={2}>
@@ -177,7 +176,7 @@ const OrdersPage = () => {
                     <Divider sx={{ my: 2 }} />
 
                     <Grid container spacing={2}>
-                      <Grid item xs={12} md={6}>
+                      <Grid size={{ xs: 12, md: 6 }}>
                         <Typography variant="body2" color="text.secondary" gutterBottom>
                           Punkt odbioru
                         </Typography>
@@ -188,7 +187,7 @@ const OrdersPage = () => {
                           {order.pickupStoreCity}
                         </Typography>
                       </Grid>
-                      <Grid item xs={12} md={6}>
+                      <Grid size={{ xs: 12, md: 6 }}>
                         <Typography variant="body2" color="text.secondary" gutterBottom>
                           Wartość zamówienia
                         </Typography>

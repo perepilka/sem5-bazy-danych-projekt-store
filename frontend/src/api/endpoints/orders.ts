@@ -2,7 +2,6 @@ import apiClient from '../client';
 import type {
   OrderDTO,
   CreateOrderRequest,
-  UpdateOrderStatusRequest,
   OrderAvailabilityDTO,
   PageResponse,
   PageableParams,
