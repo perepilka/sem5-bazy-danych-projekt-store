@@ -1,21 +1,9 @@
--- 1. SŁOWNIKI I TYPY DANYCH (ENUMY dla statusów i ról)
+-- 1. SŁOWNIKI I TYPY DANYCH
+-- NOTE: We use VARCHAR instead of ENUM for better Hibernate compatibility
 
--- Statusy produktu wg [cite: 9, 28, 30]
-CREATE TYPE product_status AS ENUM (
-    'NA_STANIE',         -- Dostępny w magazynie
-    'NA_EKSPOZYCJI',     -- Wystawiony na sali sprzedażowej
-    'ZAREZERWOWANY',     -- Rezerwacja pod zamówienie online (pomocniczy)
-    'OCZEKUJE_NA_ODBIOR',-- Skompletowany dla klienta [cite: 22]
-    'SPRZEDANY',         -- Po transakcji [cite: 20]
-    'USZKODZONY',        -- Odkryto usterkę [cite: 29]
-    'ZLIKWIDOWANY'       -- Zutylizowany [cite: 30]
-);
-
--- Role pracowników wg [cite: 198]
-CREATE TYPE user_role AS ENUM ('KIEROWNIK', 'SPRZEDAWCA', 'MAGAZYNIER');
-
--- Statusy zamówień online wg [cite: 512, 538]
-CREATE TYPE order_status AS ENUM ('NOWE', 'W_REALIZACJI', 'GOTOWE_DO_ODBIORU', 'ZAKONCZONE', 'ANULOWANE');
+-- Statusy produktu: NA_STANIE, NA_EKSPOZYCJI, ZAREZERWOWANY, OCZEKUJE_NA_ODBIOR, SPRZEDANY, USZKODZONY, ZLIKWIDOWANY
+-- Role pracowników: KIEROWNIK, SPRZEDAWCA, MAGAZYNIER  
+-- Statusy zamówień: NOWE, W_REALIZACJI, GOTOWE_DO_ODBIORU, ZAKONCZONE, ANULOWANE
 
 
 -- 2. STRUKTURA ORGANIZACYJNA
@@ -35,7 +23,7 @@ CREATE TABLE Employees (
     store_id INT REFERENCES Stores(store_id),
     first_name VARCHAR(50) NOT NULL,
     last_name VARCHAR(50) NOT NULL,
-    position user_role NOT NULL,
+    position VARCHAR(50) NOT NULL,
     login VARCHAR(50) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     is_active BOOLEAN DEFAULT TRUE
@@ -70,8 +58,9 @@ CREATE TABLE Products (
     category_id INT REFERENCES Categories(category_id),
     name VARCHAR(150) NOT NULL,
     description TEXT,
-    base_price DECIMAL(10, 2) NOT NULL -- Cena katalogowa
-    -- Видалено: ean_code, tax_rate
+    base_price DECIMAL(10, 2) NOT NULL, -- Cena katalogowa
+    low_stock_threshold INT DEFAULT 5,   -- Поріг низького запасу
+    minimum_stock INT DEFAULT 10         -- Мінімальний запас для замовлення
 );
 
 -- Dostawy - Nagłówek (Kto i kiedy przywiózł)
@@ -83,6 +72,9 @@ CREATE TABLE Deliveries (
     store_id INT REFERENCES Stores(store_id),
     created_at TIMESTAMP DEFAULT NOW()
 );
+
+-- Index used by store-scoped delivery lookups
+CREATE INDEX IF NOT EXISTS idx_deliveries_store_id ON Deliveries(store_id);
 
 -- NOWA TABELA: Pozycje Dostawy (Co jest w papierach/fakturze dostawy)
 -- To відповідає на ваше прохання зберігати продукти, які були в доставці
@@ -101,7 +93,7 @@ CREATE TABLE ProductItems (
     product_id INT REFERENCES Products(product_id),
     delivery_id INT REFERENCES Deliveries(delivery_id), 
     store_id INT REFERENCES Stores(store_id),
-    current_status product_status DEFAULT 'NA_STANIE',
+    current_status VARCHAR(50) DEFAULT 'NA_STANIE',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -114,7 +106,7 @@ CREATE TABLE CustomerOrders (
     customer_id INT REFERENCES Customers(customer_id), -- NULL dla zamówień telefonicznych bez konta?
     pickup_store_id INT REFERENCES Stores(store_id), -- Gdzie klient odbierze towar
     order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    status order_status DEFAULT 'NOWE',
+    status VARCHAR(50) DEFAULT 'NOWE',
     total_amount DECIMAL(10, 2) -- Wartość zamówienia
 );
 

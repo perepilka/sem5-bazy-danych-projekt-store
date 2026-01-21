@@ -17,6 +17,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/orders")
@@ -31,21 +33,19 @@ public class OrderController {
     public ResponseEntity<Page<OrderDTO>> getAllOrders(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
-            @RequestParam(required = false) String status,
+            @RequestParam(required = false) List<String> status,
             @RequestParam(required = false) Integer storeId) {
 
         Pageable pageable = PageRequest.of(page, size, Sort.by("orderDate").descending());
 
+        List<OrderStatus> orderStatuses = null;
         if (status != null && !status.isEmpty()) {
-            OrderStatus orderStatus = OrderStatus.valueOf(status);
-            return ResponseEntity.ok(orderService.getOrdersByStatus(orderStatus, pageable));
+            orderStatuses = status.stream()
+                    .map(OrderStatus::valueOf)
+                    .collect(Collectors.toList());
         }
 
-        if (storeId != null) {
-            return ResponseEntity.ok(orderService.getOrdersByStore(storeId, pageable));
-        }
-
-        return ResponseEntity.ok(orderService.getAllOrders(pageable));
+        return ResponseEntity.ok(orderService.searchOrders(storeId, orderStatuses, pageable));
     }
 
     @GetMapping("/my")

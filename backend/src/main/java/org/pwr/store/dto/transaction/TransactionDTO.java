@@ -13,6 +13,8 @@ import java.util.List;
 @AllArgsConstructor
 public class TransactionDTO {
     private Integer transactionId;
+    private Integer storeId;
+    private String storeName;
     private Integer employeeId;
     private String employeeName;
     private Integer customerId;
@@ -22,7 +24,7 @@ public class TransactionDTO {
     private String documentType;
     private BigDecimal totalAmount;
     private List<TransactionItemDTO> items;
-    
+
     @Data
     @NoArgsConstructor
     @AllArgsConstructor

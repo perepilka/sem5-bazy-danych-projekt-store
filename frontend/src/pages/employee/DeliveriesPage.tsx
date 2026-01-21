@@ -92,7 +92,7 @@ const DeliveriesPage = () => {
     setPage(0);
   };
 
-  const handleStatusUpdate = async (deliveryId: number, newStatus: 'W_TRAKCIE' | 'ZREALIZOWANA' | 'ANULOWANA') => {
+  const handleStatusUpdate = async (deliveryId: number, newStatus: string) => {
     try {
       await updateStatus.mutateAsync({ id: deliveryId, status: newStatus });
     } catch (error) {
@@ -121,6 +121,7 @@ const DeliveriesPage = () => {
 
   const getStatusColor = (status: string) => {
     const statusMap: Record<string, 'warning' | 'info' | 'success' | 'error' | 'default'> = {
+      PRZYJETA: 'warning',
       OCZEKUJACA: 'warning',
       W_TRAKCIE: 'info',
       ZREALIZOWANA: 'success',
@@ -293,7 +294,7 @@ const DeliveriesPage = () => {
                             </TableCell>
                             {canManageDeliveries && (
                               <TableCell align="center">
-                                {delivery.status === 'OCZEKUJACA' && (
+                                {(delivery.status === 'OCZEKUJACA' || delivery.status === 'PRZYJETA') && (
                                   <Tooltip title="Start Delivery">
                                     <Button
                                       size="small"
@@ -623,7 +624,7 @@ const CreateDeliveryDialog = ({
                     <MenuItem value={0}>Select Store</MenuItem>
                     {stores.map((s: any) => (
                       <MenuItem key={s.storeId} value={s.storeId}>
-                        {s.city}
+                        {s.city} - {s.address}
                       </MenuItem>
                     ))}
                   </Select>

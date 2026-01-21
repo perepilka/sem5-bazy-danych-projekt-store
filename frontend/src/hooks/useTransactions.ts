@@ -3,11 +3,11 @@ import axios from '../api/client';
 import type { PageableParams } from '../api/types';
 
 export interface TransactionItemDTO {
-  transactionItemId: number;
+  txItemId: number;
   itemId: number;
   productId: number;
   productName: string;
-  price: number;
+  priceSold: number;
 }
 
 export interface TransactionDTO {
@@ -18,6 +18,7 @@ export interface TransactionDTO {
   employeeName?: string;
   customerId?: number;
   customerName?: string;
+  orderId?: number;
   transactionDate: string;
   totalAmount: number;
   transactionType: string;

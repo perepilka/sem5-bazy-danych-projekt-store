@@ -33,6 +33,10 @@ public class TransactionService {
         return transactionRepository.findAll(pageable).map(this::toDTO);
     }
 
+    public Page<TransactionDTO> getTransactionsByStore(Integer storeId, Pageable pageable) {
+        return transactionRepository.findByStoreId(storeId, pageable).map(this::toDTO);
+    }
+
     public Page<TransactionDTO> getTransactionsByEmployee(Integer employeeId, Pageable pageable) {
         return transactionRepository.findByEmployeeEmployeeId(employeeId, pageable).map(this::toDTO);
     }
@@ -54,18 +58,21 @@ public class TransactionService {
     @Transactional
     public TransactionDTO createTransaction(CreateTransactionRequest request) {
         Employee employee = employeeRepository.findById(request.getEmployeeId())
-                .orElseThrow(() -> new ResourceNotFoundException("Employee not found with id: " + request.getEmployeeId()));
+                .orElseThrow(
+                        () -> new ResourceNotFoundException("Employee not found with id: " + request.getEmployeeId()));
 
         Customer customer = null;
         if (request.getCustomerId() != null) {
             customer = customerRepository.findById(request.getCustomerId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Customer not found with id: " + request.getCustomerId()));
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "Customer not found with id: " + request.getCustomerId()));
         }
 
         CustomerOrder order = null;
         if (request.getOrderId() != null) {
             order = orderRepository.findById(request.getOrderId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + request.getOrderId()));
+                    .orElseThrow(
+                            () -> new ResourceNotFoundException("Order not found with id: " + request.getOrderId()));
         }
 
         // Create transaction
@@ -83,12 +90,13 @@ public class TransactionService {
         BigDecimal total = BigDecimal.ZERO;
         for (CreateTransactionRequest.TransactionItemRequest itemReq : request.getItems()) {
             ProductItem item = productItemRepository.findById(itemReq.getItemId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Product item not found with id: " + itemReq.getItemId()));
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "Product item not found with id: " + itemReq.getItemId()));
 
             // Verify item is available for sale
-            if (item.getCurrentStatus() != ProductStatus.NA_STANIE && 
-                item.getCurrentStatus() != ProductStatus.NA_EKSPOZYCJI &&
-                item.getCurrentStatus() != ProductStatus.OCZEKUJE_NA_ODBIOR) {
+            if (item.getCurrentStatus() != ProductStatus.NA_STANIE &&
+                    item.getCurrentStatus() != ProductStatus.NA_EKSPOZYCJI &&
+                    item.getCurrentStatus() != ProductStatus.OCZEKUJE_NA_ODBIOR) {
                 throw new IllegalStateException("Product item " + itemReq.getItemId() + " is not available for sale");
             }
 
@@ -128,7 +136,8 @@ public class TransactionService {
     }
 
     private TransactionDTO toDTO(Transaction transaction) {
-        List<TransactionItem> items = transactionItemRepository.findByTransactionTransactionId(transaction.getTransactionId());
+        List<TransactionItem> items = transactionItemRepository
+                .findByTransactionTransactionId(transaction.getTransactionId());
 
         List<TransactionDTO.TransactionItemDTO> itemDTOs = items.stream()
                 .map(item -> new TransactionDTO.TransactionItemDTO(
@@ -136,12 +145,30 @@ public class TransactionService {
                         item.getItem().getItemId(),
                         item.getItem().getProduct().getProductId(),
                         item.getItem().getProduct().getName(),
-                        item.getPriceSold()
-                ))
+                        item.getPriceSold()))
                 .collect(Collectors.toList());
 
-        String employeeName = transaction.getEmployee().getFirstName() + " " + transaction.getEmployee().getLastName();
-        
+        Integer employeeId = null;
+        String employeeName = null;
+        Integer storeId = null;
+        String storeName = "Unknown Store";
+
+        if (transaction.getEmployee() != null) {
+            employeeId = transaction.getEmployee().getEmployeeId();
+            employeeName = transaction.getEmployee().getFirstName() + " " + transaction.getEmployee().getLastName();
+            if (transaction.getEmployee().getStore() != null) {
+                storeId = transaction.getEmployee().getStore().getStoreId();
+                storeName = transaction.getEmployee().getStore().getCity() + " - "
+                        + transaction.getEmployee().getStore().getAddress();
+            }
+        }
+
+        if (storeId == null && transaction.getOrder() != null) {
+            storeId = transaction.getOrder().getPickupStore().getStoreId();
+            storeName = transaction.getOrder().getPickupStore().getCity() + " - "
+                    + transaction.getOrder().getPickupStore().getAddress();
+        }
+
         String customerName = null;
         Integer customerId = null;
         if (transaction.getCustomer() != null) {
@@ -156,7 +183,9 @@ public class TransactionService {
 
         return new TransactionDTO(
                 transaction.getTransactionId(),
-                transaction.getEmployee().getEmployeeId(),
+                storeId,
+                storeName,
+                employeeId,
                 employeeName,
                 customerId,
                 customerName,
@@ -164,7 +193,6 @@ public class TransactionService {
                 transaction.getTransactionDate(),
                 transaction.getDocumentType(),
                 transaction.getTotalAmount(),
-                itemDTOs
-        );
+                itemDTOs);
     }
 }

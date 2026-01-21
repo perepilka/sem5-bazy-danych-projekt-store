@@ -23,6 +23,8 @@ import {
   IconButton,
   Collapse,
   Tooltip,
+  FormControlLabel,
+  Checkbox,
 } from '@mui/material';
 import {
   ShoppingBag,
@@ -40,6 +42,7 @@ const EmployeeOrdersPage = () => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [statusFilter, setStatusFilter] = useState<string>('');
+  const [showCompleted, setShowCompleted] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedRow, setExpandedRow] = useState<number | null>(null);
 
@@ -50,10 +53,12 @@ const EmployeeOrdersPage = () => {
   const canUpdateOrders = user?.role === 'SPRZEDAWCA' || user?.role === 'KIEROWNIK' || user?.role === 'MAGAZYNIER';
 
   // Dla pracівників pokazуємо tylko zamówienia ich sklepu, dla kierownika wszystkie
+  const activeStatuses = ['NOWE', 'W_REALIZACJI', 'GOTOWE_DO_ODBIORU'];
+
   const { data: ordersPage, isLoading, error } = useAllOrders({
     page,
     size: rowsPerPage,
-    ...(statusFilter && { status: statusFilter }),
+    status: statusFilter ? statusFilter : (showCompleted ? undefined : activeStatuses),
     ...(!isManager && user?.storeId && { storeId: user.storeId }),
   } as any);
 
@@ -118,7 +123,7 @@ const EmployeeOrdersPage = () => {
       NOWE: 'Nowe',
       W_REALIZACJI: 'W realizacji',
       GOTOWE_DO_ODBIORU: 'Gotowe do odbioru',
-      ZAKONCZONE: 'Zakończone',
+      ZAKONCZONE: 'Odebrane',
       ANULOWANE: 'Anulowane',
     };
     return statusLabels[status] || status;
@@ -163,10 +168,21 @@ const EmployeeOrdersPage = () => {
               <MenuItem value="NOWE">Nowe</MenuItem>
               <MenuItem value="W_REALIZACJI">W realizacji</MenuItem>
               <MenuItem value="GOTOWE_DO_ODBIORU">Gotowe do odbioru</MenuItem>
-              <MenuItem value="ZAKONCZONE">Zakończone</MenuItem>
+              <MenuItem value="ZAKONCZONE">Odebrane</MenuItem>
               <MenuItem value="ANULOWANE">Anulowane</MenuItem>
             </Select>
           </FormControl>
+
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={showCompleted}
+                onChange={(e) => setShowCompleted(e.target.checked)}
+                disabled={!!statusFilter}
+              />
+            }
+            label="Show Completed/Cancelled"
+          />
         </Box>
       </Paper>
 
@@ -352,7 +368,7 @@ const EmployeeOrdersPage = () => {
 
                               {(order.status === 'ZAKONCZONE' || order.status === 'ANULOWANE') && (
                                 <Typography variant="caption" color="text.secondary">
-                                  Zakończone
+                                  {getStatusLabel(order.status)}
                                 </Typography>
                               )}
                             </Box>

@@ -48,6 +48,30 @@ public class OrderService {
         return orderRepository.findByPickupStoreStoreId(storeId, pageable).map(this::toDTO);
     }
 
+    @Transactional(readOnly = true)
+    public Page<OrderDTO> searchOrders(Integer storeId, List<OrderStatus> statuses, Pageable pageable) {
+        if (storeId != null && statuses != null && !statuses.isEmpty()) {
+            if (statuses.size() == 1) {
+                return orderRepository.findByPickupStoreStoreIdAndStatus(storeId, statuses.get(0), pageable)
+                        .map(this::toDTO);
+            }
+            return orderRepository.findByPickupStoreStoreIdAndStatusIn(storeId, statuses, pageable).map(this::toDTO);
+        }
+
+        if (storeId != null) {
+            return orderRepository.findByPickupStoreStoreId(storeId, pageable).map(this::toDTO);
+        }
+
+        if (statuses != null && !statuses.isEmpty()) {
+            if (statuses.size() == 1) {
+                return orderRepository.findByStatus(statuses.get(0), pageable).map(this::toDTO);
+            }
+            return orderRepository.findByStatusIn(statuses, pageable).map(this::toDTO);
+        }
+
+        return orderRepository.findAll(pageable).map(this::toDTO);
+    }
+
     public OrderDTO getOrderById(Integer id) {
         CustomerOrder order = orderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + id));
@@ -211,68 +235,129 @@ public class OrderService {
     }
 
     private void markItemsReadyForPickup(CustomerOrder order) {
-        List<ProductItem> reservedItems = productItemRepository.findReservedItemsForOrder(order.getOrderId());
+        List<OrderLine> lines = orderLineRepository.findByOrderOrderId(order.getOrderId());
 
-        for (ProductItem item : reservedItems) {
-            if (item.getCurrentStatus() == ProductStatus.ZAREZERWOWANY) {
+        for (OrderLine line : lines) {
+            // Find reserved items for this product in the pickup store
+            List<ProductItem> reservedItems = productItemRepository.findAvailableItemsInStore(
+                    line.getProduct().getProductId(),
+                    order.getPickupStore().getStoreId(),
+                    ProductStatus.ZAREZERWOWANY);
+
+            int quantityNeeded = line.getQuantity();
+            int marked = 0;
+
+            for (ProductItem item : reservedItems) {
+                if (marked >= quantityNeeded)
+                    break;
+
                 item.setCurrentStatus(ProductStatus.OCZEKUJE_NA_ODBIOR);
                 productItemRepository.save(item);
+                marked++;
             }
         }
     }
 
     private void createTransactionForOrder(CustomerOrder order) {
-        // Find an employee in the pickup store to assign transaction
-        // In a real system, this would be the employee who processed the pickup
-        // For now, we'll create a transaction without employee assignment
-
         System.out.println("Creating transaction for order: " + order.getOrderId());
 
-        // Mark items as sold first
-        List<ProductItem> itemsToSell = productItemRepository.findReservedItemsForOrder(order.getOrderId());
+        // Get order lines to know how many of each product we need
+        List<OrderLine> lines = orderLineRepository.findByOrderOrderId(order.getOrderId());
 
-        System.out.println("Found " + itemsToSell.size() + " items to sell");
-
-        if (itemsToSell.isEmpty()) {
-            throw new IllegalStateException("No items found to complete order #" + order.getOrderId());
+        if (lines.isEmpty()) {
+            throw new IllegalStateException("No order lines found for order #" + order.getOrderId());
         }
 
         Transaction transaction = new Transaction();
         transaction.setCustomer(order.getCustomer());
         transaction.setOrder(order);
-        transaction.setDocumentType("SPRZEDAZ");
+        transaction.setDocumentType("PARAGON");
         transaction.setTransactionDate(LocalDateTime.now());
         transaction.setTotalAmount(order.getTotalAmount());
-        transaction.setEmployee(null); // Could be set to the store manager or pickup employee
+        transaction.setEmployee(null);
 
         transaction = transactionRepository.save(transaction);
 
-        for (ProductItem item : itemsToSell) {
-            System.out.println("Processing item " + item.getItemId() + " with status: " + item.getCurrentStatus());
-            if (item.getCurrentStatus() == ProductStatus.OCZEKUJE_NA_ODBIOR) {
-                // Create transaction item
-                TransactionItem txItem = new TransactionItem();
-                txItem.setTransaction(transaction);
-                txItem.setItem(item);
-                txItem.setPriceSold(item.getProduct().getBasePrice());
-                transactionItemRepository.save(txItem);
+        int totalItemsSold = 0;
 
-                // Mark as sold
-                item.setCurrentStatus(ProductStatus.SPRZEDANY);
-                productItemRepository.save(item);
-                System.out.println("Item " + item.getItemId() + " marked as sold");
+        for (OrderLine line : lines) {
+            // Find items with status OCZEKUJE_NA_ODBIOR for this product in the pickup
+            // store
+            List<ProductItem> readyItems = productItemRepository.findAvailableItemsInStore(
+                    line.getProduct().getProductId(),
+                    order.getPickupStore().getStoreId(),
+                    ProductStatus.OCZEKUJE_NA_ODBIOR);
+
+            int quantityNeeded = line.getQuantity();
+            int sold = 0;
+
+            for (ProductItem item : readyItems) {
+                if (sold >= quantityNeeded)
+                    break;
+
+                // Check if this item is not already sold
+                if (item.getCurrentStatus() == ProductStatus.OCZEKUJE_NA_ODBIOR) {
+                    // Create transaction item
+                    TransactionItem txItem = new TransactionItem();
+                    txItem.setTransaction(transaction);
+                    txItem.setItem(item);
+                    txItem.setPriceSold(line.getPriceAtOrder());
+                    transactionItemRepository.save(txItem);
+
+                    // Mark as sold
+                    item.setCurrentStatus(ProductStatus.SPRZEDANY);
+                    productItemRepository.save(item);
+                    sold++;
+                    totalItemsSold++;
+                    System.out.println(
+                            "Item " + item.getItemId() + " marked as sold for product " + line.getProduct().getName());
+                }
+            }
+
+            if (sold < quantityNeeded) {
+                System.out.println("Warning: Only sold " + sold + " of " + quantityNeeded + " for product "
+                        + line.getProduct().getName());
             }
         }
+
+        System.out.println("Transaction complete. Total items sold: " + totalItemsSold);
     }
 
     private void releaseReservedItems(CustomerOrder order) {
-        List<ProductItem> reservedItems = productItemRepository.findReservedItemsForOrder(order.getOrderId());
+        List<OrderLine> lines = orderLineRepository.findByOrderOrderId(order.getOrderId());
 
-        for (ProductItem item : reservedItems) {
-            if (item.getCurrentStatus() == ProductStatus.ZAREZERWOWANY ||
-                    item.getCurrentStatus() == ProductStatus.OCZEKUJE_NA_ODBIOR) {
+        for (OrderLine line : lines) {
+            // Find reserved items for this product
+            List<ProductItem> reservedItems = productItemRepository.findAvailableItemsInStore(
+                    line.getProduct().getProductId(),
+                    order.getPickupStore().getStoreId(),
+                    ProductStatus.ZAREZERWOWANY);
+
+            // Also find items waiting for pickup
+            List<ProductItem> waitingItems = productItemRepository.findAvailableItemsInStore(
+                    line.getProduct().getProductId(),
+                    order.getPickupStore().getStoreId(),
+                    ProductStatus.OCZEKUJE_NA_ODBIOR);
+
+            int quantityToRelease = line.getQuantity();
+            int released = 0;
+
+            // Release reserved items first
+            for (ProductItem item : reservedItems) {
+                if (released >= quantityToRelease)
+                    break;
                 item.setCurrentStatus(ProductStatus.NA_STANIE);
                 productItemRepository.save(item);
+                released++;
+            }
+
+            // Then release waiting items if needed
+            for (ProductItem item : waitingItems) {
+                if (released >= quantityToRelease)
+                    break;
+                item.setCurrentStatus(ProductStatus.NA_STANIE);
+                productItemRepository.save(item);
+                released++;
             }
         }
     }

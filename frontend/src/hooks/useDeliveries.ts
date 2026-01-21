@@ -17,7 +17,7 @@ export interface DeliveryDTO {
   deliveryId: number;
   supplierName: string;
   deliveryDate: string;
-  status: 'OCZEKUJACA' | 'W_TRAKCIE' | 'ZREALIZOWANA' | 'ANULOWANA';
+  status: 'PRZYJETA' | 'OCZEKUJACA' | 'W_TRAKCIE' | 'ZREALIZOWANA' | 'ANULOWANA';
   lines: DeliveryLineDTO[];
 }
 
@@ -33,7 +33,7 @@ export interface CreateDeliveryRequest {
 }
 
 export interface UpdateDeliveryStatusRequest {
-  status: 'W_TRAKCIE' | 'ZREALIZOWANA' | 'ANULOWANA';
+  status: 'W_TRAKCIE' | 'ZREALIZOWANA' | 'ANULOWANA' | string;
 }
 
 export const useDeliveries = (params?: PageableParams & { status?: string }) => {
@@ -61,7 +61,7 @@ export const useDelivery = (id: number | null) => {
 
 export const useCreateDelivery = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (data: CreateDeliveryRequest) => {
       const response = await axios.post('/deliveries', data);
@@ -75,7 +75,7 @@ export const useCreateDelivery = () => {
 
 export const useUpdateDeliveryStatus = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async ({ id, status }: { id: number; status: UpdateDeliveryStatusRequest['status'] }) => {
       const response = await axios.patch(`/deliveries/${id}/status?status=${status}`);

@@ -28,7 +28,8 @@ public class TransactionController {
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) Integer employeeId,
             @RequestParam(required = false) Integer customerId,
-            @RequestParam(required = false) String documentType) {
+            @RequestParam(required = false) String documentType,
+            @RequestParam(required = false) Integer storeId) {
 
         Pageable pageable = PageRequest.of(page, size, Sort.by("transactionDate").descending());
 
@@ -42,6 +43,10 @@ public class TransactionController {
 
         if (documentType != null) {
             return ResponseEntity.ok(transactionService.getTransactionsByDocumentType(documentType, pageable));
+        }
+
+        if (storeId != null) {
+            return ResponseEntity.ok(transactionService.getTransactionsByStore(storeId, pageable));
         }
 
         return ResponseEntity.ok(transactionService.getAllTransactions(pageable));

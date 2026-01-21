@@ -1,36 +1,37 @@
--- Insert test stores
+-- Insert test stores (3 stores, all in Wrocław)
 INSERT INTO stores (address, city, phone_number)
 VALUES ('ul. Główna 1', 'Wrocław', '+48123456789'),
-       ('ul. Rynek 10', 'Kraków', '+48987654321'),
-       ('ul. Marszałkowska 5', 'Warszawa', '+48555666777'),
-       ('ul. Piłsudskiego 15', 'Poznań', '+48444555666'),
-       ('ul. Długa 8', 'Gdańsk', '+48333444555');
+       ('ul. Słoneczna 12', 'Wrocław', '+48111111111'),
+       ('ul. Ogrodowa 5', 'Wrocław', '+48222222222');
 
 -- Insert test employees (password is 'password123' hashed with BCrypt)
 -- Hash generated: $2a$10$NkmJSheq.3H6XB7D0hv0XO0G2XG/LweBFR.kDbGV7wxkc94DxgtlK
 INSERT INTO employees (store_id, first_name, last_name, position, login, password_hash, is_active)
-VALUES (1, 'Jan', 'Kowalski', 'KIEROWNIK', '    ',
-        '$2a$10$NkmJSheq.3H6XB7D0hv0XO0G2XG/LweBFR.kDbGV7wxkc94DxgtlK', true),
-       (1, 'Anna', 'Nowak', 'SPRZEDAWCA', 'anna.nowak',
-        '$2a$10$NkmJSheq.3H6XB7D0hv0XO0G2XG/LweBFR.kDbGV7wxkc94DxgtlK', true),
-       (1, 'Marek', 'Zieliński', 'MAGAZYNIER', 'marek.zielinski',
-        '$2a$10$NkmJSheq.3H6XB7D0hv0XO0G2XG/LweBFR.kDbGV7wxkc94DxgtlK', true),
-       (2, 'Piotr', 'Wiśniewski', 'KIEROWNIK', 'piotr.wisniewski',
-        '$2a$10$NkmJSheq.3H6XB7D0hv0XO0G2XG/LweBFR.kDbGV7wxkc94DxgtlK', true),
-       (2, 'Katarzyna', 'Kamińska', 'SPRZEDAWCA', 'katarzyna.kaminska',
-        '$2a$10$NkmJSheq.3H6XB7D0hv0XO0G2XG/LweBFR.kDbGV7wxkc94DxgtlK', true),
-       (3, 'Michał', 'Lewandowski', 'KIEROWNIK', 'michal.lewandowski',
-        '$2a$10$NkmJSheq.3H6XB7D0hv0XO0G2XG/LweBFR.kDbGV7wxkc94DxgtlK', true),
-       (3, 'Agnieszka', 'Szymańska', 'SPRZEDAWCA', 'agnieszka.szymanska',
-        '$2a$10$NkmJSheq.3H6XB7D0hv0XO0G2XG/LweBFR.kDbGV7wxkc94DxgtlK', true),
-       (3, 'Paweł', 'Dąbrowski', 'MAGAZYNIER', 'pawel.dabrowski',
-        '$2a$10$NkmJSheq.3H6XB7D0hv0XO0G2XG/LweBFR.kDbGV7wxkc94DxgtlK', true),
-       (4, 'Ewa', 'Grabowska', 'KIEROWNIK', 'ewa.grabowska',
-        '$2a$10$NkmJSheq.3H6XB7D0hv0XO0G2XG/LweBFR.kDbGV7wxkc94DxgtlK', true),
-       (4, 'Tomasz', 'Pawlak', 'MAGAZYNIER', 'tomasz.pawlak',
-        '$2a$10$NkmJSheq.3H6XB7D0hv0XO0G2XG/LweBFR.kDbGV7wxkc94DxgtlK', true),
-       (5, 'Magdalena', 'Król', 'SPRZEDAWCA', 'magdalena.krol',
-        '$2a$10$NkmJSheq.3H6XB7D0hv0XO0G2XG/LweBFR.kDbGV7wxkc94DxgtlK', true);
+VALUES
+-- Store 1: 1 manager, 3 cashiers, 3 warehouse workers
+(1, 'Jan', 'Kowalski', 'KIEROWNIK', 'wro1.manager', '$2a$10$NkmJSheq.3H6XB7D0hv0XO0G2XG/LweBFR.kDbGV7wxkc94DxgtlK', true),
+(1, 'Anna', 'Nowak', 'SPRZEDAWCA', 'wro1.cashier1', '$2a$10$NkmJSheq.3H6XB7D0hv0XO0G2XG/LweBFR.kDbGV7wxkc94DxgtlK', true),
+(1, 'Katarzyna', 'Wiśniewska', 'SPRZEDAWCA', 'wro1.cashier2', '$2a$10$NkmJSheq.3H6XB7D0hv0XO0G2XG/LweBFR.kDbGV7wxkc94DxgtlK', true),
+(1, 'Magdalena', 'Król', 'SPRZEDAWCA', 'wro1.cashier3', '$2a$10$NkmJSheq.3H6XB7D0hv0XO0G2XG/LweBFR.kDbGV7wxkc94DxgtlK', true),
+(1, 'Marek', 'Zieliński', 'MAGAZYNIER', 'wro1.mag1', '$2a$10$NkmJSheq.3H6XB7D0hv0XO0G2XG/LweBFR.kDbGV7wxkc94DxgtlK', true),
+(1, 'Paweł', 'Dąbrowski', 'MAGAZYNIER', 'wro1.mag2', '$2a$10$NkmJSheq.3H6XB7D0hv0XO0G2XG/LweBFR.kDbGV7wxkc94DxgtlK', true),
+(1, 'Tomasz', 'Pawlak', 'MAGAZYNIER', 'wro1.mag3', '$2a$10$NkmJSheq.3H6XB7D0hv0XO0G2XG/LweBFR.kDbGV7wxkc94DxgtlK', true),
+-- Store 2: 1 manager, 3 cashiers, 3 warehouse workers
+(2, 'Piotr', 'Wiśniewski', 'KIEROWNIK', 'wro2.manager', '$2a$10$NkmJSheq.3H6XB7D0hv0XO0G2XG/LweBFR.kDbGV7wxkc94DxgtlK', true),
+(2, 'Agnieszka', 'Szymańska', 'SPRZEDAWCA', 'wro2.cashier1', '$2a$10$NkmJSheq.3H6XB7D0hv0XO0G2XG/LweBFR.kDbGV7wxkc94DxgtlK', true),
+(2, 'Joanna', 'Lewandowska', 'SPRZEDAWCA', 'wro2.cashier2', '$2a$10$NkmJSheq.3H6XB7D0hv0XO0G2XG/LweBFR.kDbGV7wxkc94DxgtlK', true),
+(2, 'Maria', 'Kowalczyk', 'SPRZEDAWCA', 'wro2.cashier3', '$2a$10$NkmJSheq.3H6XB7D0hv0XO0G2XG/LweBFR.kDbGV7wxkc94DxgtlK', true),
+(2, 'Adam', 'Nowak', 'MAGAZYNIER', 'wro2.mag1', '$2a$10$NkmJSheq.3H6XB7D0hv0XO0G2XG/LweBFR.kDbGV7wxkc94DxgtlK', true),
+(2, 'Michał', 'Lewandowski', 'MAGAZYNIER', 'wro2.mag2', '$2a$10$NkmJSheq.3H6XB7D0hv0XO0G2XG/LweBFR.kDbGV7wxkc94DxgtlK', true),
+(2, 'Krzysztof', 'Wójcik', 'MAGAZYNIER', 'wro2.mag3', '$2a$10$NkmJSheq.3H6XB7D0hv0XO0G2XG/LweBFR.kDbGV7wxkc94DxgtlK', true),
+-- Store 3: 1 manager, 3 cashiers, 3 warehouse workers
+(3, 'Ewa', 'Grabowska', 'KIEROWNIK', 'wro3.manager', '$2a$10$NkmJSheq.3H6XB7D0hv0XO0G2XG/LweBFR.kDbGV7wxkc94DxgtlK', true),
+(3, 'Karolina', 'Zając', 'SPRZEDAWCA', 'wro3.cashier1', '$2a$10$NkmJSheq.3H6XB7D0hv0XO0G2XG/LweBFR.kDbGV7wxkc94DxgtlK', true),
+(3, 'Natalia', 'Lis', 'SPRZEDAWCA', 'wro3.cashier2', '$2a$10$NkmJSheq.3H6XB7D0hv0XO0G2XG/LweBFR.kDbGV7wxkc94DxgtlK', true),
+(3, 'Magda', 'Michalska', 'SPRZEDAWCA', 'wro3.cashier3', '$2a$10$NkmJSheq.3H6XB7D0hv0XO0G2XG/LweBFR.kDbGV7wxkc94DxgtlK', true),
+(3, 'Łukasz', 'Mazur', 'MAGAZYNIER', 'wro3.mag1', '$2a$10$NkmJSheq.3H6XB7D0hv0XO0G2XG/LweBFR.kDbGV7wxkc94DxgtlK', true),
+(3, 'Damian', 'Piotrowski', 'MAGAZYNIER', 'wro3.mag2', '$2a$10$NkmJSheq.3H6XB7D0hv0XO0G2XG/LweBFR.kDbGV7wxkc94DxgtlK', true),
+(3, 'Rafał', 'Baran', 'MAGAZYNIER', 'wro3.mag3', '$2a$10$NkmJSheq.3H6XB7D0hv0XO0G2XG/LweBFR.kDbGV7wxkc94DxgtlK', true);
 
 -- Insert test customers (password is 'password123' hashed with BCrypt)
 -- Hash generated: $2a$10$NkmJSheq.3H6XB7D0hv0XO0G2XG/LweBFR.kDbGV7wxkc94DxgtlK
@@ -105,11 +106,9 @@ VALUES
 -- Insert sample deliveries with store assignments
 INSERT INTO deliveries (supplier_name, delivery_date, status, store_id)
 VALUES 
-    ('Tech Wholesale Poland', '2026-01-15', 'ZREALIZOWANA', 1),
-    ('Electronics Distribution', '2026-01-16', 'ZREALIZOWANA', 2),
-    ('Smart Devices Sp. z o.o.', '2026-01-17', 'W_TRAKCIE', 3),
-    ('Home Appliances Inc', '2026-01-18', 'PRZYJETA', 4),
-    ('Media Market Supplier', '2026-01-19', 'PRZYJETA', 5);
+        ('Tech Wholesale Poland', '2026-01-15', 'ZREALIZOWANA', 1),
+        ('Electronics Distribution', '2026-01-16', 'ZREALIZOWANA', 2),
+        ('Smart Devices Sp. z o.o.', '2026-01-17', 'PRZYJETA', 3);
 
 -- Insert delivery lines for the sample deliveries
 INSERT INTO deliverylines (delivery_id, product_id, quantity, purchase_price)
@@ -119,36 +118,24 @@ VALUES
     (1, 9, 5, 8500.00),   -- MacBook Pro 14"
     (1, 17, 15, 1200.00), -- Sony WH-1000XM5
     
-    -- Delivery 2 to Store 2 (Kraków)
+        -- Delivery 2 to Store 2 (Wrocław)
     (2, 2, 12, 3500.00),  -- Samsung Galaxy S24
     (2, 5, 8, 4200.00),   -- Samsung QLED 65"
     (2, 21, 20, 2000.00), -- PlayStation 5
     
-    -- Delivery 3 to Store 3 (Warszawa) - in progress
-    (3, 3, 15, 2300.00),  -- Xiaomi 13
-    (3, 10, 10, 6200.00), -- Dell XPS 15
-    (3, 19, 25, 400.00),  -- JBL Flip 6
-    
-    -- Delivery 4 to Store 4 (Poznań) - accepted
-    (4, 13, 6, 2900.00),  -- Lodówka Samsung
-    (4, 14, 8, 1900.00),  -- Pralka Bosch
-    
-    -- Delivery 5 to Store 5 (Gdańsk) - accepted
-    (5, 22, 15, 1900.00), -- Xbox Series X
-    (5, 26, 20, 320.00);  -- Logitech MX Master
+        -- Delivery 3 to Store 3 (Wrocław) - accepted
+        (3, 3, 15, 2300.00),  -- Xiaomi 13
+        (3, 10, 10, 6200.00), -- Dell XPS 15
+        (3, 19, 25, 400.00);  -- JBL Flip 6
 
 -- Insert product items (individual items for tracking)
 -- Store 1 (Wrocław) - Create multiple items for each product
 DO
 $$
-    DECLARE
-store_num INT;
-        prod_id
-INT;
-        item_count
-INT;
-        i
-INT;
+DECLARE
+    prod_id INT;
+    item_count INT;
+    i INT;
 BEGIN
         -- For store 1, add items for all products
 FOR prod_id IN 1..28 LOOP
@@ -170,30 +157,10 @@ END LOOP;
 
         -- For store 3, add items for products 1-25
 FOR prod_id IN 1..25 LOOP
-            item_count := 4 + (prod_id % 6);  -- Between 4-9 items
+            item_count := 3 + (prod_id % 4);  -- Between 3-6 items
 FOR i IN 1..item_count LOOP
                 INSERT INTO productitems (product_id, store_id, current_status)
                 VALUES (prod_id, 3, 'NA_STANIE');
-END LOOP;
-END LOOP;
-
-        -- For store 4, add items for selected products
-        FOREACH
-prod_id IN ARRAY ARRAY[1,2,3,5,7,9,11,13,15,17,19,21,23,25,27] LOOP
-            item_count := 2 + ((prod_id * 7) % 5);  -- Between 2-6 items
-FOR i IN 1..item_count LOOP
-                INSERT INTO productitems (product_id, store_id, current_status)
-                VALUES (prod_id, 4, 'NA_STANIE');
-END LOOP;
-END LOOP;
-
-        -- For store 5, add items for selected products
-        FOREACH
-prod_id IN ARRAY ARRAY[2,4,6,8,10,12,14,16,18,20,22,24,26,28] LOOP
-            item_count := 2 + ((prod_id * 3) % 4);  -- Between 2-5 items
-FOR i IN 1..item_count LOOP
-                INSERT INTO productitems (product_id, store_id, current_status)
-                VALUES (prod_id, 5, 'NA_STANIE');
 END LOOP;
 END LOOP;
 END $$;

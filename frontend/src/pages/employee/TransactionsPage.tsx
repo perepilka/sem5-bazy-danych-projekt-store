@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, Fragment } from 'react';
 import {
   Container,
   Paper,
@@ -25,6 +25,7 @@ import {
 } from '@mui/icons-material';
 import { format } from 'date-fns';
 import { useTransactions } from '../../hooks/useTransactions';
+import { useAuthStore } from '../../store/authStore';
 import type { TransactionDTO } from '../../hooks/useTransactions';
 
 const TransactionsPage = () => {
@@ -33,10 +34,14 @@ const TransactionsPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedRow, setExpandedRow] = useState<number | null>(null);
 
+  const { user } = useAuthStore();
+  const isManager = user?.role === 'KIEROWNIK';
+
   const { data: transactionsPage, isLoading, error } = useTransactions({
     page,
     size: rowsPerPage,
-  });
+    ...(!isManager && user?.storeId && { storeId: user.storeId }),
+  } as any);
 
   const transactions = transactionsPage?.content || [];
   const totalElements = transactionsPage?.totalElements || 0;
@@ -123,8 +128,8 @@ const TransactionsPage = () => {
                   const isExpanded = expandedRow === transaction.transactionId;
 
                   return (
-                    <>
-                      <TableRow key={transaction.transactionId} hover>
+                    <Fragment key={transaction.transactionId}>
+                      <TableRow hover>
                         <TableCell>
                           <IconButton
                             size="small"
@@ -184,12 +189,12 @@ const TransactionsPage = () => {
                                 </TableHead>
                                 <TableBody>
                                   {transaction.items.map((item) => (
-                                    <TableRow key={item.transactionItemId}>
+                                    <TableRow key={item.txItemId}>
                                       <TableCell>#{item.itemId}</TableCell>
                                       <TableCell>{item.productName}</TableCell>
                                       <TableCell align="right">
                                         <Typography fontWeight="bold">
-                                          {item.price.toFixed(2)} PLN
+                                          {item.priceSold.toFixed(2)} PLN
                                         </Typography>
                                       </TableCell>
                                     </TableRow>
@@ -210,7 +215,7 @@ const TransactionsPage = () => {
                           </Collapse>
                         </TableCell>
                       </TableRow>
-                    </>
+                    </Fragment>
                   );
                 })}
               </TableBody>
